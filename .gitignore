@@ -1,0 +1,4 @@
+.vscode
+.env
+commits.txt
+gitleaks-report.*

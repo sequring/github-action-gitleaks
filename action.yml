@@ -1,0 +1,55 @@
+name: Gitleaks Scanner
+description: Run Gitleaks in your CI/CD workflow
+branding:
+  color: purple
+  icon: shield
+inputs:
+  source:
+    description: 'Path to source (relative to $GITHUB_WORKSPACE) (default: $GITHUB_WORKSPACE)'
+    required: false
+  config:
+    description: 'Config file path (relative to $GITHUB_WORKSPACE) (default build-in: /.gitleaks/UDMSecretChecks.toml)'
+    required: false
+    default: '/.gitleaks/UDMSecretChecks.toml'
+  report_format:
+    description: 'Report file format: json, csv, sarif (default: json)'
+    required: false
+    default: 'json'
+  no_git:
+    description: 'Treat git repos as plain directories and scan those file'
+    required: false
+  redact:
+    description: 'Redact secrets from logs and stdout (default: true)'
+    required: false
+    default: 'true'
+  fail:
+    description: 'Fail if secrets founded (default: true)'
+    required: false
+    default: 'true'
+  verbose:
+    description: 'Show verbose output from scan (default: true)'
+    required: false
+    default: 'true'
+  log_level:
+    description: 'Log level (debug, info, warn, error, fatal) (default: info)'
+    required: false
+    default: 'info'
+
+outputs:
+  exitcode: # id of output
+    description: 'Success for failure value from scan'
+  result: # id of output
+    description: 'Gitleaks result summary'
+  output: # id of output
+    description: 'Gitleaks log output'
+  command: # id of output
+    description: 'Gitleaks executed command'
+  report: # id of output
+    description: 'Report file path'
+#runs:
+#  using: 'docker'
+#  image: 'Dockerfile'
+
+runs:
+  using: 'docker'
+  image: 'docker://ghcr.io/popcornpalace/github-action-gitleaks:latest'
