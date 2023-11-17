@@ -45,7 +45,7 @@ This GitHub Action allows you to run [Gitleaks](https://github.com/zricethezav/g
 
 - name: Run Gitleaks
   id: gitleaks
-  uses: PopcornPalace/github-action-gitleaks.git
+  uses: sequring/github-action-gitleaks.git
   with:
     report_format: sarif
     fail: false
@@ -78,7 +78,7 @@ This GitHub Action allows you to run [Gitleaks](https://github.com/zricethezav/g
 
 - name: Run Gitleaks
   id: gitleaks
-  uses: PopcornPalace/github-action-gitleaks@main
+  uses: sequring/github-action-gitleaks@main
   with:
     config: "MyGitleaksConfigs/MyGitleaksConfig.toml"
 
