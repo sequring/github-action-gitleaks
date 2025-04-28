@@ -1,5 +1,5 @@
 const exec = require("@actions/exec");
-const cache = require("@actions/cache");
+const { createClient } = require("@actions/cache");
 const core = require("@actions/core");
 const tc = require("@actions/tool-cache");
 const { readFileSync } = require("fs");
@@ -9,11 +9,8 @@ const { DefaultArtifactClient } = require("@actions/artifact");
 
 const EXIT_CODE_LEAKS_DETECTED = 2;
 
-// TODO: Make a gitleaks class with an octokit attribute so we don't have to pass in the octokit to every method.
+const cacheClient = createClient();
 
-// Install will download the version of gitleaks specified in GITLEAKS_VERSION
-// or use the latest version of gitleaks if GITLEAKS_VERSION is not specified.
-// This function will also cache the downloaded gitleaks binary in the tool cache.
 async function Install(version) {
   const pathToInstall = path.join(os.tmpdir(), `gitleaks-${version}`);
   core.info(
@@ -21,21 +18,22 @@ async function Install(version) {
   );
   const cacheKey = `gitleaks-cache-${version}-${process.platform}-${process.arch}`;
   let restoredFromCache = undefined;
+
   try {
-    restoredFromCache = await cache.restoreCache([pathToInstall], cacheKey);
+    restoredFromCache = await cacheClient.restoreCache([pathToInstall], cacheKey);
   } catch (error) {
-    core.warning(error);
+    core.warning(`Cache restore failed: ${error}`);
   }
 
   if (restoredFromCache !== undefined) {
-    core.info(`Gitleaks restored from cache`);
+    core.info(`✅ Gitleaks restored from cache`);
   } else {
     const gitleaksReleaseURL = downloadURL(
       process.platform,
       process.arch,
       version
     );
-    core.info(`Downloading gitleaks from ${gitleaksReleaseURL}`);
+    core.info(`⬇️ Downloading gitleaks from ${gitleaksReleaseURL}`);
     let downloadPath = "";
     try {
       downloadPath = await tc.downloadTool(
@@ -44,8 +42,9 @@ async function Install(version) {
       );
     } catch (error) {
       core.error(
-        `could not install gitleaks from ${gitleaksReleaseURL}, error: ${error}`
+        `❌ Could not install gitleaks from ${gitleaksReleaseURL}, error: ${error}`
       );
+      throw error;
     }
 
     if (gitleaksReleaseURL.endsWith(".zip")) {
@@ -53,13 +52,14 @@ async function Install(version) {
     } else if (gitleaksReleaseURL.endsWith(".tar.gz")) {
       await tc.extractTar(downloadPath, pathToInstall);
     } else {
-      core.error(`Unsupported archive format: ${gitleaksReleaseURL}`);
+      core.error(`❌ Unsupported archive format: ${gitleaksReleaseURL}`);
+      throw new Error("Unsupported archive format");
     }
 
     try {
-      await cache.saveCache([pathToInstall], cacheKey);
+      await cacheClient.saveCache([pathToInstall], cacheKey);
     } catch (error) {
-      core.warning(error);
+      core.warning(`Cache save failed: ${error}`);
     }
   }
 
@@ -75,7 +75,6 @@ function downloadURL(platform, arch, version) {
 }
 
 async function Latest(octokit) {
-  // docs: https://octokit.github.io/rest.js/v18#repos-get-latest-release
   const latest = await octokit.rest.repos.getLatestRelease({
     owner: "zricethezav",
     repo: "gitleaks",
@@ -97,8 +96,6 @@ async function Scan(gitleaksEnableUploadArtifact, scanInfo, eventType) {
 
   if (eventType == "push") {
     if (scanInfo.baseRef == scanInfo.headRef) {
-      // if base and head refs are the same, use `--log-opts=-1` to
-      // scan only one commit
       args.push(`--log-opts=-1`);
     } else {
       args.push(
@@ -111,7 +108,7 @@ async function Scan(gitleaksEnableUploadArtifact, scanInfo, eventType) {
     );
   }
 
-  core.info(`gitleaks cmd: gitleaks ${args.join(" ")}`);
+  core.info(`🔍 gitleaks cmd: gitleaks ${args.join(" ")}`);
   let exitCode = await exec.exec("gitleaks", args, {
     ignoreReturnCode: true,
     delay: 60 * 1000,
@@ -147,7 +144,7 @@ async function ScanPullRequest(
 
   if (!process.env.GITHUB_TOKEN) {
     core.error(
-      "🛑 GITHUB_TOKEN is now required to scan pull requests. You can use the automatically created token as shown in the [README](https://github.com/gitleaks/gitleaks-action#usage-example). For more info about the recent breaking update, see [here](https://github.com/gitleaks/gitleaks-action#-announcement)."
+      "🛑 GITHUB_TOKEN is now required to scan pull requests. You can use the automatically created token as shown in the README. For more info, see https://github.com/gitleaks/gitleaks-action#-announcement."
     );
     process.exit(1);
   }
@@ -172,16 +169,14 @@ async function ScanPullRequest(
     eventType
   );
 
-  // skip comments if `GITLEAKS_ENABLE_COMMENTS` is set to false
   if (process.env.GITLEAKS_ENABLE_COMMENTS == "false") {
-    core.info("skipping comments");
+    core.info("💬 Skipping comments");
     return exitCode;
   }
 
   if (exitCode == EXIT_CODE_LEAKS_DETECTED) {
-    // read results.sarif file
     const sarif = JSON.parse(readFileSync("results.sarif", "utf8"));
-    // iterate through results
+
     for (let i = 0; i < sarif.runs[0].results.length; i++) {
       let results = sarif.runs[0].results[i];
       const commit_sha = results.partialFingerprints.commitSha;
@@ -213,12 +208,10 @@ echo ${fingerprint} >> .gitleaksignore
         line: results.locations[0].physicalLocation.region.startLine,
       };
 
-      // check if there are any GITLEAKS_NOTIFY_USER_LIST env variable
       if (process.env.GITLEAKS_NOTIFY_USER_LIST) {
         proposedComment.body += `\n\ncc ${process.env.GITLEAKS_NOTIFY_USER_LIST}`;
       }
 
-      // check if there are any review comments on the pull request currently
       let comments = await octokit.request(
         "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments",
         {
@@ -229,16 +222,12 @@ echo ${fingerprint} >> .gitleaksignore
       );
 
       let skip = false;
-      // iterate through comments, checking if the proposed comment is already present
-      // TODO: If performance becomes too slow, pull this for loop out of the
-      // outer for loop and create a dictionary of all the existing comments
       comments.data.forEach((comment) => {
         if (
           comment.body == proposedComment.body &&
           comment.path == proposedComment.path &&
           comment.original_line == proposedComment.line
         ) {
-          // comment already present, skip
           skip = true;
           return;
         }
@@ -251,16 +240,11 @@ echo ${fingerprint} >> .gitleaksignore
       try {
         await octokit.rest.pulls.createReviewComment(proposedComment);
       } catch (error) {
-        core.warning(`Error encountered when attempting to write a comment on PR #${eventJSON.number}: ${error}
-Likely an issue with too large of a diff for the comment to be written.
-All secrets that have been leaked will be reported in the summary and job artifact.`);
+        core.warning(`⚠️ Failed to write PR comment: ${error}`);
       }
     }
   }
 
-  // exit code 2 means leaks detected
-  // exit code 1 means error has occurred in gitleaks
-  // exit code 0 means no leaks detected
   return exitCode;
 }
 

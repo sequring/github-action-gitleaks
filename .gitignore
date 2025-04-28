@@ -2,3 +2,4 @@
 .env
 commits.txt
 gitleaks-report.*
+node_modules
