@@ -1,5 +1,5 @@
 const exec = require("@actions/exec");
-const { createClient } = require("@actions/cache");
+const cache = require("@actions/cache");
 const core = require("@actions/core");
 const tc = require("@actions/tool-cache");
 const { readFileSync } = require("fs");
@@ -8,8 +8,6 @@ const path = require("path");
 const { DefaultArtifactClient } = require("@actions/artifact");
 
 const EXIT_CODE_LEAKS_DETECTED = 2;
-
-const cacheClient = createClient();
 
 async function Install(version) {
   const pathToInstall = path.join(os.tmpdir(), `gitleaks-${version}`);
@@ -20,7 +18,7 @@ async function Install(version) {
   let restoredFromCache = undefined;
 
   try {
-    restoredFromCache = await cacheClient.restoreCache([pathToInstall], cacheKey);
+    restoredFromCache = await cache.restoreCache([pathToInstall], cacheKey); // восстанавливаем кэш
   } catch (error) {
     core.warning(`Cache restore failed: ${error}`);
   }
@@ -57,7 +55,7 @@ async function Install(version) {
     }
 
     try {
-      await cacheClient.saveCache([pathToInstall], cacheKey);
+      await cache.saveCache([pathToInstall], cacheKey); // сохраняем кэш
     } catch (error) {
       core.warning(`Cache save failed: ${error}`);
     }

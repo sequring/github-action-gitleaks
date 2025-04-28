@@ -71425,7 +71425,7 @@ exports["default"] = _default;
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 const exec = __nccwpck_require__(1514);
-const { createClient } = __nccwpck_require__(7799);
+const cache = __nccwpck_require__(7799);
 const core = __nccwpck_require__(2186);
 const tc = __nccwpck_require__(7784);
 const { readFileSync } = __nccwpck_require__(7147);
@@ -71434,8 +71434,6 @@ const path = __nccwpck_require__(1017);
 const { DefaultArtifactClient } = __nccwpck_require__(2605);
 
 const EXIT_CODE_LEAKS_DETECTED = 2;
-
-const cacheClient = createClient();
 
 async function Install(version) {
   const pathToInstall = path.join(os.tmpdir(), `gitleaks-${version}`);
@@ -71446,7 +71444,7 @@ async function Install(version) {
   let restoredFromCache = undefined;
 
   try {
-    restoredFromCache = await cacheClient.restoreCache([pathToInstall], cacheKey);
+    restoredFromCache = await cache.restoreCache([pathToInstall], cacheKey); // восстанавливаем кэш
   } catch (error) {
     core.warning(`Cache restore failed: ${error}`);
   }
@@ -71483,7 +71481,7 @@ async function Install(version) {
     }
 
     try {
-      await cacheClient.saveCache([pathToInstall], cacheKey);
+      await cache.saveCache([pathToInstall], cacheKey); // сохраняем кэш
     } catch (error) {
       core.warning(`Cache save failed: ${error}`);
     }
