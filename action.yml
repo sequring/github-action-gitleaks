@@ -52,4 +52,4 @@ outputs:
 
 runs:
   using: 'docker'
-  image: 'docker://ghcr.io/popcornpalace/github-action-gitleaks:latest'
+  image: 'docker://ghcr.io/sequring/github-action-gitleaks:latest'
