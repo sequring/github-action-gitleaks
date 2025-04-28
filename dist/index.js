@@ -71431,7 +71431,7 @@ const tc = __nccwpck_require__(7784);
 const { readFileSync } = __nccwpck_require__(7147);
 const os = __nccwpck_require__(2037);
 const path = __nccwpck_require__(1017);
-const { DefaultArtifactClient } = __nccwpck_require__(2605);
+const { create } = __nccwpck_require__(2605); // измененный импорт
 
 const EXIT_CODE_LEAKS_DETECTED = 2;
 
@@ -71540,7 +71540,7 @@ async function Scan(gitleaksEnableUploadArtifact, scanInfo, eventType) {
   core.setOutput("exit-code", exitCode);
 
   if (gitleaksEnableUploadArtifact == true) {
-    const artifactClient = new DefaultArtifactClient();
+    const artifactClient = create(); // создание клиента артефактов
     const artifactName = "gitleaks-results.sarif";
     const options = {
       continueOnError: true,
@@ -71676,7 +71676,7 @@ module.exports.Scan = Scan;
 module.exports.Latest = Latest;
 module.exports.Install = Install;
 module.exports.ScanPullRequest = ScanPullRequest;
-module.exports.EXIT_CODE_LEAKS_DETECTED = EXIT_CODE_LEAKS_DETECTED;
+module.exports.EXIT_CODE_LEAKS
 
 
 /***/ }),

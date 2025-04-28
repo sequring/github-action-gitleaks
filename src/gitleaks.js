@@ -5,7 +5,7 @@ const tc = require("@actions/tool-cache");
 const { readFileSync } = require("fs");
 const os = require("os");
 const path = require("path");
-const { DefaultArtifactClient } = require("@actions/artifact");
+const { create } = require("@actions/artifact"); // измененный импорт
 
 const EXIT_CODE_LEAKS_DETECTED = 2;
 
@@ -114,7 +114,7 @@ async function Scan(gitleaksEnableUploadArtifact, scanInfo, eventType) {
   core.setOutput("exit-code", exitCode);
 
   if (gitleaksEnableUploadArtifact == true) {
-    const artifactClient = new DefaultArtifactClient();
+    const artifactClient = create(); // создание клиента артефактов
     const artifactName = "gitleaks-results.sarif";
     const options = {
       continueOnError: true,
@@ -250,4 +250,4 @@ module.exports.Scan = Scan;
 module.exports.Latest = Latest;
 module.exports.Install = Install;
 module.exports.ScanPullRequest = ScanPullRequest;
-module.exports.EXIT_CODE_LEAKS_DETECTED = EXIT_CODE_LEAKS_DETECTED;
+module.exports.EXIT_CODE_LEAKS
