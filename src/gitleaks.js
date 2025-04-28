@@ -5,7 +5,7 @@ const tc = require("@actions/tool-cache");
 const { readFileSync } = require("fs");
 const os = require("os");
 const path = require("path");
-const { create } = require("@actions/artifact"); // измененный импорт
+const { create } = require("@actions/artifact");
 
 const EXIT_CODE_LEAKS_DETECTED = 2;
 
@@ -18,7 +18,7 @@ async function Install(version) {
   let restoredFromCache = undefined;
 
   try {
-    restoredFromCache = await cache.restoreCache([pathToInstall], cacheKey); // восстанавливаем кэш
+    restoredFromCache = await cache.restoreCache([pathToInstall], cacheKey);
   } catch (error) {
     core.warning(`Cache restore failed: ${error}`);
   }
@@ -55,7 +55,7 @@ async function Install(version) {
     }
 
     try {
-      await cache.saveCache([pathToInstall], cacheKey); // сохраняем кэш
+      await cache.saveCache([pathToInstall], cacheKey);
     } catch (error) {
       core.warning(`Cache save failed: ${error}`);
     }
@@ -113,9 +113,10 @@ async function Scan(gitleaksEnableUploadArtifact, scanInfo, eventType) {
   });
   core.setOutput("exit-code", exitCode);
 
+  /*
   if (gitleaksEnableUploadArtifact == true) {
-    const artifactClient = create(); // создание клиента артефактов
-    const artifactName = "gitleaks-results.sarif";
+    const artifactClient = create();
+    const artifactName = "gitleaks-results-sarif";
     const options = {
       continueOnError: true,
     };
@@ -127,6 +128,7 @@ async function Scan(gitleaksEnableUploadArtifact, scanInfo, eventType) {
       options
     );
   }
+    */
 
   return exitCode;
 }

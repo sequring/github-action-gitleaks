@@ -71431,7 +71431,7 @@ const tc = __nccwpck_require__(7784);
 const { readFileSync } = __nccwpck_require__(7147);
 const os = __nccwpck_require__(2037);
 const path = __nccwpck_require__(1017);
-const { create } = __nccwpck_require__(2605); // измененный импорт
+const { create } = __nccwpck_require__(2605);
 
 const EXIT_CODE_LEAKS_DETECTED = 2;
 
@@ -71444,7 +71444,7 @@ async function Install(version) {
   let restoredFromCache = undefined;
 
   try {
-    restoredFromCache = await cache.restoreCache([pathToInstall], cacheKey); // восстанавливаем кэш
+    restoredFromCache = await cache.restoreCache([pathToInstall], cacheKey);
   } catch (error) {
     core.warning(`Cache restore failed: ${error}`);
   }
@@ -71481,7 +71481,7 @@ async function Install(version) {
     }
 
     try {
-      await cache.saveCache([pathToInstall], cacheKey); // сохраняем кэш
+      await cache.saveCache([pathToInstall], cacheKey);
     } catch (error) {
       core.warning(`Cache save failed: ${error}`);
     }
@@ -71539,9 +71539,10 @@ async function Scan(gitleaksEnableUploadArtifact, scanInfo, eventType) {
   });
   core.setOutput("exit-code", exitCode);
 
+  /*
   if (gitleaksEnableUploadArtifact == true) {
-    const artifactClient = create(); // создание клиента артефактов
-    const artifactName = "gitleaks-results.sarif";
+    const artifactClient = create();
+    const artifactName = "gitleaks-results-sarif";
     const options = {
       continueOnError: true,
     };
@@ -71553,6 +71554,7 @@ async function Scan(gitleaksEnableUploadArtifact, scanInfo, eventType) {
       options
     );
   }
+    */
 
   return exitCode;
 }
